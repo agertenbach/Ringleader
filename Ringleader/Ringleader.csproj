@@ -6,12 +6,23 @@
     <Description>Extends the NET Core default HttpClientFactory to support managing and applying contextually appropriate primary handlers (i.e. unique certificates for different endpoints) while retaining the benefits of handler pooling and typed client pipelines.</Description>
     <Copyright>2020 Adam Gertenbach</Copyright>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <Version>1.0.1</Version>
+    <Version>1.0.2</Version>
+    <PackageLicenseFile>LICENSE</PackageLicenseFile>
+    <PackageProjectUrl>https://github.com/agertenbach/Ringleader</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/agertenbach/Ringleader</RepositoryUrl>
+    <PackageReleaseNotes>Initial release</PackageReleaseNotes>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="Microsoft.Extensions.Http" Version="3.1.2" />
     <PackageReference Include="Microsoft.Extensions.Logging" Version="3.1.2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="..\LICENSE">
+      <Pack>True</Pack>
+      <PackagePath></PackagePath>
+    </None>
   </ItemGroup>
 
 </Project>
