@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Net.Http;
 using System.Net.Security;
 
@@ -10,16 +11,21 @@ namespace RingleaderTests
     /// </summary>
     public class TestingEvaluationData
     {
-        public SslClientAuthenticationOptions LastSetSslOptions { get; set; } = new SslClientAuthenticationOptions();
+        public string LastSetContext { get; set; } = string.Empty;
 
-        public string CertificatesSet { get; set; } = string.Empty;
+        public string ContextSet { get; set; } = string.Empty;
+
+        public List<string> CookieApplied { get; set; } = new List<string>();
+        public List<string> CookieSet { get; set; } = new List<string>();
 
         public bool DelegatingHandlerDidRun { get; set; } = false;
 
         public void Reset()
         {
-            LastSetSslOptions = null;
-            CertificatesSet = string.Empty;
+            LastSetContext = string.Empty;
+            ContextSet = string.Empty;
+            CookieApplied = new List<string>();
+            CookieSet = new List<string>();
             DelegatingHandlerDidRun = false;
         }
     }
