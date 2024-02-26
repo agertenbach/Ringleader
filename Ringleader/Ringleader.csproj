@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>net5.0;net6.0;net7.0;net8.0;</TargetFrameworks>
+    <TargetFramework>net6.0</TargetFramework>
     <Authors>Adam Gertenbach</Authors>
     <Description>Extends the NET Core default HttpClientFactory to support managing and applying contextually appropriate primary handlers (i.e. unique certificates for different endpoints) while retaining the benefits of handler pooling and typed client pipelines.</Description>
     <Copyright>2020-2024 Adam Gertenbach</Copyright>
