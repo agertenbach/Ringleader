@@ -30,7 +30,7 @@ namespace Ringleader.HttpClientFactory
                 string client = _resolver.ParseClientName(builder.Name);
                 string handlerContext = _resolver.ParseHandlerName(builder.Name);
                 _logger.LogDebug("Building primary handler for client [{client}] with context [{context}]", client, handlerContext);
-                builder.PrimaryHandler = _primaryHandlerFactory.CreateHandler(client, handlerContext);
+                builder.PrimaryHandler = _primaryHandlerFactory.CreateHandler(client, handlerContext) ?? builder.PrimaryHandler;
                 if (builder.PrimaryHandler is HttpClientHandler h) h.Properties.TryAdd("Handler Context", handlerContext);
                 else if (builder.PrimaryHandler is SocketsHttpHandler s) s.Properties.TryAdd("Handler Context", handlerContext);
                 next(builder);

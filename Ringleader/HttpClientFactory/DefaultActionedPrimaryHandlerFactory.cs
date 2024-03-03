@@ -12,7 +12,7 @@ namespace Ringleader.HttpClientFactory
         /// Function to optionally resolve an <see cref="HttpMessageHandler"/> based on a specified client and/or context
         /// </summary>
         public Func<string, string, HttpMessageHandler?> HandlerFactory { get; set; } 
-            = (client, context) => new HttpClientHandler();
+            = (client, context) => null;
     }
 
     /// <summary>
@@ -27,7 +27,7 @@ namespace Ringleader.HttpClientFactory
             _options = options ?? throw new ArgumentNullException(nameof(options));
         }
 
-        public HttpMessageHandler CreateHandler(string clientName, string handlerContext)
-            => _options.CurrentValue.HandlerFactory.Invoke(clientName, handlerContext) ?? new HttpClientHandler();
+        public HttpMessageHandler? CreateHandler(string clientName, string handlerContext)
+            => _options.CurrentValue.HandlerFactory.Invoke(clientName, handlerContext);
     }
 }
