@@ -1,13 +1,20 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 16
-VisualStudioVersion = 16.0.29609.76
+# Visual Studio Version 17
+VisualStudioVersion = 17.9.34607.119
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Ringleader", "Ringleader\Ringleader.csproj", "{0D211CBF-5A47-4242-84B6-D388632181C4}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RingleaderExample", "RingleaderExample\RingleaderExample.csproj", "{A2508433-C100-4FDF-8DD5-7F6A6F595788}"
-EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RingleaderTests", "RingleaderTests\RingleaderTests.csproj", "{916FC366-6A55-426B-91FB-1575F03969E9}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WebExample", "WebExample\WebExample.csproj", "{219EDA92-D634-40C0-A71A-7B49275FF086}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{E7CBD922-598B-4B9A-B72D-3D3C28A9B136}"
+	ProjectSection(SolutionItems) = preProject
+		.gitignore = .gitignore
+		.github\workflows\dotnetcore.yml = .github\workflows\dotnetcore.yml
+		README.md = README.md
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -19,14 +26,14 @@ Global
 		{0D211CBF-5A47-4242-84B6-D388632181C4}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{0D211CBF-5A47-4242-84B6-D388632181C4}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{0D211CBF-5A47-4242-84B6-D388632181C4}.Release|Any CPU.Build.0 = Release|Any CPU
-		{A2508433-C100-4FDF-8DD5-7F6A6F595788}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{A2508433-C100-4FDF-8DD5-7F6A6F595788}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{A2508433-C100-4FDF-8DD5-7F6A6F595788}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{A2508433-C100-4FDF-8DD5-7F6A6F595788}.Release|Any CPU.Build.0 = Release|Any CPU
 		{916FC366-6A55-426B-91FB-1575F03969E9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{916FC366-6A55-426B-91FB-1575F03969E9}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{916FC366-6A55-426B-91FB-1575F03969E9}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{916FC366-6A55-426B-91FB-1575F03969E9}.Release|Any CPU.Build.0 = Release|Any CPU
+		{219EDA92-D634-40C0-A71A-7B49275FF086}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{219EDA92-D634-40C0-A71A-7B49275FF086}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{219EDA92-D634-40C0-A71A-7B49275FF086}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{219EDA92-D634-40C0-A71A-7B49275FF086}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

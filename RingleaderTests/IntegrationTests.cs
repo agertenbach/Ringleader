@@ -6,16 +6,17 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.DependencyInjection;
 using System.Security.Cryptography.X509Certificates;
-
 using Ringleader;
-using RingleaderExample;
+using RingleaderTests.SupportingClasses;
+using Ringleader.Cookies;
+using System.Threading.Tasks;
 
 namespace RingleaderTests
 {
     public class IntegrationTest
     {
-        private const string DUMMY_1 = "dummy1";
-        private const string DUMMY_2 = "dummy2";
+        public const string DUMMY_1 = "dummy1";
+        public const string DUMMY_2 = "dummy2";
         private const string DUMMY_URL = "http://www.example.com";
 
         private readonly IHost _host;
@@ -31,26 +32,17 @@ namespace RingleaderTests
             return new HostBuilder()
                 .ConfigureServices((hostContext, services) =>
                 {
-                    // Add Ringleader with our contextual factory and handler factory
-                    services.AddRingleader()
-                        .WithContextualClientFactory<MyHttpClientFactory, MyHttpClient, string>()
-                        .WithPrimaryHandlerFactory<TestingPrimaryHandlerFactory>()
-                        .Build();
-
-                    // Configure a sample repository of certificates that our primary handler factory can use
-                    var myCertificateProvider = new MyCertificateProvider();
-                    myCertificateProvider.SetCertificate(new X509Certificate2("./DummyCertificates/dummy_cert1.pem"), DUMMY_1);
-                    myCertificateProvider.SetCertificate(new X509Certificate2("./DummyCertificates/dummy_cert2.pem"), DUMMY_2);
-                    services.AddSingleton<MyCertificateProvider>(myCertificateProvider);
-
                     // Add our testing evaluation singleton to monitor handler construction and execution of the delegating handler pipeline
                     services.AddSingleton<TestingEvaluationData>();
 
                     // Add our dummy HttpClient and attach a delegating handler that can log execution for testing
-                    services.AddTransient<TestingDelegatingHandler>();
-                    services.AddHttpClient<MyHttpClient>()
-                        .AddHttpMessageHandler<TestingDelegatingHandler>();
+                    services.AddTransient<TerminalTestingDelegatingHandler>();
+                    services.AddHttpClient<TestTypedClient>()
+                        .UseContextualCookies()
+                        .AddHttpMessageHandler<TerminalTestingDelegatingHandler>();
 
+                    // Add contextual factory support
+                    services.AddContextualHttpClientFactory<TestingPrimaryHandlerFactory>();
                  });
         }
 
@@ -63,15 +55,15 @@ namespace RingleaderTests
             var handlerReference = _host.Services.GetService<TestingEvaluationData>();
             handlerReference.Reset();
 
-            var factory = _host.Services.GetService<IHttpContextualClientFactory<MyHttpClient, string>>();
-            var typedClient = factory.GetTypedClientByContext(DUMMY_1);
-            typedClient.Client.SendAsync(new HttpRequestMessage(HttpMethod.Get, DUMMY_URL));
+            var factory = _host.Services.GetService<IContextualHttpClientFactory>();
+            var typedClient = factory.CreateClient<TestTypedClient>(DUMMY_1);
+            typedClient.SendAsync(new HttpRequestMessage(HttpMethod.Get, DUMMY_URL), string.Empty, default);
 
-            Assert.Equal(DUMMY_1, handlerReference.CertificatesSet); // Certificate should be applied to the handler
+            Assert.Equal(DUMMY_1, handlerReference.ContextSet); // Context should be applied to the handler
         }
 
        /// <summary>
-       /// When we request a MyHttpClient using the service container directly via DefaultHttpClientFactory, the underlying handler should show no certificates
+       /// When we request a MyHttpClient using the service container directly via DefaultHttpClientFactory, the underlying handler should show no context
        /// </summary>
         [Fact]
         public void Regular_Request_Returns_Standard_Handler()
@@ -79,10 +71,10 @@ namespace RingleaderTests
             var handlerReference = _host.Services.GetService<TestingEvaluationData>();
             handlerReference.Reset();
 
-            var typedClient = _host.Services.GetService<MyHttpClient>();
-            typedClient.Client.SendAsync(new HttpRequestMessage(HttpMethod.Get, DUMMY_URL));
+            var typedClient = _host.Services.GetService<TestTypedClient>();
+            typedClient.SendAsync(new HttpRequestMessage(HttpMethod.Get, DUMMY_URL), string.Empty, default);
 
-            Assert.Equal(string.Empty, handlerReference.CertificatesSet); // No certificates should be applied to the handler
+            Assert.Equal(string.Empty, handlerReference.ContextSet); // No context should be applied to the handler
         }
 
         /// <summary>
@@ -94,15 +86,15 @@ namespace RingleaderTests
             var handlerReference = _host.Services.GetService<TestingEvaluationData>();
             handlerReference.Reset();
 
-            var factory = _host.Services.GetService<IHttpContextualClientFactory<MyHttpClient, string>>();
-            var typedClientContextual = factory.GetTypedClientByContext(DUMMY_1);
-            typedClientContextual.Client.SendAsync(new HttpRequestMessage(HttpMethod.Get, DUMMY_URL));
-            string contextualSet = handlerReference.CertificatesSet;
+            var factory = _host.Services.GetService<IContextualHttpClientFactory>();
+            var typedClientContextual = factory.CreateClient<TestTypedClient>(DUMMY_1);
+            typedClientContextual.SendAsync(new HttpRequestMessage(HttpMethod.Get, DUMMY_URL), string.Empty, default);
+            string contextualSet = handlerReference.ContextSet;
             handlerReference.Reset();
 
-            var typedClientRegular = _host.Services.GetService<MyHttpClient>();
-            typedClientRegular.Client.SendAsync(new HttpRequestMessage(HttpMethod.Get, DUMMY_URL));
-            string regularSet = handlerReference.CertificatesSet;
+            var typedClientRegular = _host.Services.GetService<TestTypedClient>();
+            typedClientRegular.SendAsync(new HttpRequestMessage(HttpMethod.Get, DUMMY_URL), string.Empty, default);
+            string regularSet = handlerReference.ContextSet;
 
             Assert.True(regularSet == string.Empty && contextualSet == DUMMY_1); // Contextual call handlers should not interfere with subsequent regular call handlers
         }
@@ -116,15 +108,15 @@ namespace RingleaderTests
             var handlerReference = _host.Services.GetService<TestingEvaluationData>();
             handlerReference.Reset();
 
-            var typedClientRegular = _host.Services.GetService<MyHttpClient>();
-            typedClientRegular.Client.SendAsync(new HttpRequestMessage(HttpMethod.Get, DUMMY_URL));
-            string regularSet = handlerReference.CertificatesSet;
+            var typedClientRegular = _host.Services.GetService<TestTypedClient>();
+            typedClientRegular.SendAsync(new HttpRequestMessage(HttpMethod.Get, DUMMY_URL), string.Empty, default);
+            string regularSet = handlerReference.ContextSet;
             handlerReference.Reset();
 
-            var factory = _host.Services.GetService<IHttpContextualClientFactory<MyHttpClient, string>>();
-            var typedClientContextual = factory.GetTypedClientByContext(DUMMY_1);
-            typedClientContextual.Client.SendAsync(new HttpRequestMessage(HttpMethod.Get, DUMMY_URL));
-            string contextualSet = handlerReference.CertificatesSet;
+            var factory = _host.Services.GetService<IContextualHttpClientFactory>();
+            var typedClientContextual = factory.CreateClient<TestTypedClient>(DUMMY_1);
+            typedClientContextual.SendAsync(new HttpRequestMessage(HttpMethod.Get, DUMMY_URL), string.Empty, default);
+            string contextualSet = handlerReference.ContextSet;
 
             Assert.True(regularSet == string.Empty && contextualSet == DUMMY_1); // Regular call handlers should not interfere with subsequent contextual call handlers
         }
@@ -137,16 +129,16 @@ namespace RingleaderTests
         {
             var handlerReference = _host.Services.GetService<TestingEvaluationData>();
             handlerReference.Reset();
-            var factory = _host.Services.GetService<IHttpContextualClientFactory<MyHttpClient, string>>();
+            var factory = _host.Services.GetService<IContextualHttpClientFactory>();
 
-            var firstClientContextual = factory.GetTypedClientByContext(DUMMY_1);
-            firstClientContextual.Client.SendAsync(new HttpRequestMessage(HttpMethod.Get, DUMMY_URL));
-            string firstSet = handlerReference.CertificatesSet;
+            var firstClientContextual = factory.CreateClient<TestTypedClient>(DUMMY_1);
+            firstClientContextual.SendAsync(new HttpRequestMessage(HttpMethod.Get, DUMMY_URL), string.Empty, default);
+            string firstSet = handlerReference.ContextSet;
             handlerReference.Reset();
 
-            var secondClientContextual = factory.GetTypedClientByContext(DUMMY_2);
-            secondClientContextual.Client.SendAsync(new HttpRequestMessage(HttpMethod.Get, DUMMY_URL));
-            string secondSet = handlerReference.CertificatesSet;
+            var secondClientContextual = factory.CreateClient<TestTypedClient>(DUMMY_2);
+            secondClientContextual.SendAsync(new HttpRequestMessage(HttpMethod.Get, DUMMY_URL), string.Empty, default);
+            string secondSet = handlerReference.ContextSet;
 
             Assert.True(firstSet == DUMMY_1 && secondSet == DUMMY_2); // Each contextual request created and used a different handler for the pool
         }
@@ -160,9 +152,9 @@ namespace RingleaderTests
             var handlerReference = _host.Services.GetService<TestingEvaluationData>();
             handlerReference.Reset();
 
-            var factory = _host.Services.GetService<IHttpContextualClientFactory<MyHttpClient, string>>();
-            var typedClient = factory.GetTypedClientByContext(DUMMY_1);
-            typedClient.Client.SendAsync(new HttpRequestMessage(HttpMethod.Get, DUMMY_URL));
+            var factory = _host.Services.GetService<IContextualHttpClientFactory>();
+            var typedClient = factory.CreateClient<TestTypedClient>(DUMMY_1);
+            typedClient.SendAsync(new HttpRequestMessage(HttpMethod.Get, DUMMY_URL), string.Empty, default);
 
             Assert.True(handlerReference.DelegatingHandlerDidRun);
         }
@@ -176,8 +168,8 @@ namespace RingleaderTests
             var handlerReference = _host.Services.GetService<TestingEvaluationData>();
             handlerReference.Reset();
 
-            var typedClientRegular = _host.Services.GetService<MyHttpClient>();
-            typedClientRegular.Client.SendAsync(new HttpRequestMessage(HttpMethod.Get, DUMMY_URL));
+            var typedClientRegular = _host.Services.GetService<TestTypedClient>();
+            typedClientRegular.SendAsync(new HttpRequestMessage(HttpMethod.Get, DUMMY_URL), string.Empty, default);
 
             Assert.True(handlerReference.DelegatingHandlerDidRun);
         }
@@ -192,15 +184,40 @@ namespace RingleaderTests
             var handlerReference = _host.Services.GetService<TestingEvaluationData>();
             handlerReference.Reset();
 
-            var factory = _host.Services.GetService<IHttpContextualClientFactory<MyHttpClient, string>>();
-            var typedClientContextual = factory.GetTypedClientByContext(DUMMY_1);
-            typedClientContextual.Client.SendAsync(new HttpRequestMessage(HttpMethod.Get, DUMMY_URL));
+            var factory = _host.Services.GetService<IContextualHttpClientFactory>();
+            var typedClientContextual = factory.CreateClient<TestTypedClient>(DUMMY_1);
+            typedClientContextual.SendAsync(new HttpRequestMessage(HttpMethod.Get, DUMMY_URL), string.Empty, default);
             handlerReference.Reset();
 
-            var typedClientRegular = _host.Services.GetService<MyHttpClient>();
-            typedClientRegular.Client.SendAsync(new HttpRequestMessage(HttpMethod.Get, DUMMY_URL));
+            var typedClientRegular = _host.Services.GetService<TestTypedClient>();
+            typedClientRegular.SendAsync(new HttpRequestMessage(HttpMethod.Get, DUMMY_URL), string.Empty, default);
 
             Assert.True(handlerReference.DelegatingHandlerDidRun);
+        }
+
+        [Fact]
+        public async Task Cookies_And_Handler_No_Conflict()
+        {
+            var handlerReference = _host.Services.GetService<TestingEvaluationData>();
+            handlerReference.Reset();
+
+            var factory = _host.Services.GetService<IContextualHttpClientFactory>();
+            var typedClientContextual = factory.CreateClient<TestTypedClient>(DUMMY_1);
+            await typedClientContextual.SendAsync(new HttpRequestMessage(HttpMethod.Get, DUMMY_URL), DUMMY_1, default);
+            string contextualSet = handlerReference.ContextSet;
+            handlerReference.Reset();
+
+            var typedClientRegular = _host.Services.GetService<TestTypedClient>();
+            await typedClientRegular.SendAsync(new HttpRequestMessage(HttpMethod.Get, DUMMY_URL), DUMMY_2, default);
+            string regularSet = handlerReference.ContextSet;
+
+            var cache = _host.Services.GetRequiredService<ICookieContainerCache>();
+            var cookies1 = await cache.GetOrAdd<TestTypedClient>(DUMMY_1, default);
+            var cookies2 = await cache.GetOrAdd<TestTypedClient>(DUMMY_2, default);
+
+            Assert.True(regularSet == string.Empty && contextualSet == DUMMY_1); // Contextual call handlers should not interfere with subsequent regular call handlers
+            Assert.Equal(1, cookies1.Count);
+            Assert.Equal(1, cookies2.Count);
         }
     }
 }

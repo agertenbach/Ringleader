@@ -1,9 +1,7 @@
 ﻿using System;
 using System.Net.Http;
-using System.Security.Cryptography.X509Certificates;
 
-using Ringleader;
-using RingleaderExample;
+using Ringleader.HttpClientFactory;
 
 namespace RingleaderTests
 {
@@ -12,27 +10,23 @@ namespace RingleaderTests
     /// </summary>
     public class TestingPrimaryHandlerFactory : IPrimaryHandlerFactory
     {
-        private readonly MyCertificateProvider _myCertificateProvider;
-        private readonly TestingEvaluationData _primaryHandlerReference;
+        private readonly TestingEvaluationData _testEvaluation;
 
-        public TestingPrimaryHandlerFactory(MyCertificateProvider myCertificateProvider, TestingEvaluationData primaryHandlerReference)
+        public TestingPrimaryHandlerFactory(TestingEvaluationData testEvaluation)
         {
-            _myCertificateProvider = myCertificateProvider ?? throw new ArgumentNullException(nameof(myCertificateProvider));
-            _primaryHandlerReference = primaryHandlerReference ?? throw new ArgumentNullException(nameof(TestingEvaluationData));
+            _testEvaluation = testEvaluation ?? throw new ArgumentNullException(nameof(testEvaluation));
         }
-        public HttpMessageHandler CreateHandler(string name)
+        public HttpMessageHandler CreateHandler(string clientName, string handlerContext)
         {
             SocketsHttpHandler socketsHttpHandler = new SocketsHttpHandler();
-            if (_myCertificateProvider.HasCertificate(name))
+            if (handlerContext == IntegrationTest.DUMMY_1 || handlerContext == IntegrationTest.DUMMY_2)
             {
-                socketsHttpHandler.SslOptions = new System.Net.Security.SslClientAuthenticationOptions();
-                socketsHttpHandler.SslOptions.ClientCertificates = new X509Certificate2Collection(_myCertificateProvider.GetCertificate(name));
-                _primaryHandlerReference.LastSetSslOptions = socketsHttpHandler.SslOptions; // Pass handler options for inspection in tests
-                _primaryHandlerReference.CertificatesSet = name; // Flag certificate set
+
+                _testEvaluation.ContextSet = handlerContext; // Flag context set
             }
             else
             {
-                _primaryHandlerReference.CertificatesSet = string.Empty; // Flag no certificate set
+                _testEvaluation.ContextSet = string.Empty; // Flag no context set
             }
             
             return socketsHttpHandler;
