@@ -1,5 +1,6 @@
 ﻿using System.Collections.Concurrent;
 using System.Net;
+using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -9,19 +10,21 @@ namespace Ringleader.Cookies
     {
         private readonly ConcurrentDictionary<string, CookieContainer> _dictionary = new ConcurrentDictionary<string, CookieContainer>();
 
-
         private static string CompoundKey(string clientName, string key)
             => clientName + ":" + key;
+
 
         public Task<CookieContainer> GetOrAdd(string clientName, string key, CancellationToken token = default)
         {
             var c = _dictionary.GetOrAdd(CompoundKey(clientName, key), new CookieContainer());
-            return Task.FromResult(c);
+            var copy = c.Clone();
+            return Task.FromResult(copy);
         }
 
         public Task AddOrUpdate(string clientName, string key, CookieContainer value, CancellationToken token = default)
         {
-            _dictionary.AddOrUpdate(CompoundKey(clientName, key), value, (k, v) => v);
+            var copy = value.Clone();
+            _dictionary.AddOrUpdate(CompoundKey(clientName, key), copy, (k, v) => copy);
             return Task.CompletedTask;
         }
 

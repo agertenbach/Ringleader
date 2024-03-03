@@ -30,4 +30,23 @@ namespace RingleaderTests.SupportingClasses
             return _httpClient.SendAsync(request, cancellationToken);
         }
     }
+
+    public class TestAltTypedClient
+    {
+        private readonly HttpClient _httpClient;
+        private readonly ILogger<TestAltTypedClient> _logger;
+
+        public TestAltTypedClient(HttpClient httpClient, ILogger<TestAltTypedClient> logger)
+        {
+            _httpClient = httpClient ?? throw new ArgumentNullException(nameof(httpClient));
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        }
+
+        public Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, string cookieContext, CancellationToken cancellationToken)
+        {
+            _logger.LogInformation("This request was sent with the example typed client using the cookie container for {context}", cookieContext);
+            request.SetCookieContext(cookieContext);
+            return _httpClient.SendAsync(request, cancellationToken);
+        }
+    }
 }

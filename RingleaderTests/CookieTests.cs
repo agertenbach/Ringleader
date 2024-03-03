@@ -37,6 +37,25 @@ namespace RingleaderTests
                     services.AddHttpClient<TestTypedClient>()
                         .UseContextualCookies()
                         .AddHttpMessageHandler<TerminalTestingDelegatingHandler>();
+
+                    // Add our dummy alt HttpClient and attach a delegating handler that can log execution for testing
+                    // and apply any settings that could concievably break our builder filter both before and after
+                    services.AddHttpClient<TestAltTypedClient>()
+                        .ConfigurePrimaryHttpMessageHandler(() => new SocketsHttpHandler() { UseCookies = true })
+                        .ConfigureHttpMessageHandlerBuilder(b =>
+                        {
+                            if (b.PrimaryHandler is HttpClientHandler h) h.UseCookies = true;
+                            if (b.PrimaryHandler is SocketsHttpHandler s) s.UseCookies = true;
+                        })
+                        .UseContextualCookies()
+                        .ConfigurePrimaryHttpMessageHandler(() => new SocketsHttpHandler() { UseCookies = true })
+                        .ConfigureHttpMessageHandlerBuilder(b =>
+                        {
+                            if (b.PrimaryHandler is HttpClientHandler h) h.UseCookies = true;
+                            if (b.PrimaryHandler is SocketsHttpHandler s) s.UseCookies = true;
+                        })
+                        .AddHttpMessageHandler<TerminalTestingDelegatingHandler>();
+                        
                 });
         }
 
@@ -76,6 +95,50 @@ namespace RingleaderTests
 
             Assert.Equal(container1.GetCookieHeader(new Uri(DUMMY_URL)), handlerReference.CookieSet[0]);
             Assert.Equal(container2.GetCookieHeader(new Uri(DUMMY_URL)), handlerReference.CookieSet[1]);
+        }
+
+        [Fact]
+        public async Task Confirm_Registration_Extensions_Dont_Interfere()
+        {
+            var handlerReference = _host.Services.GetService<TestingEvaluationData>();
+            handlerReference.Reset();
+
+            var typedClient = _host.Services.GetService<TestAltTypedClient>();
+
+            var request1 = new HttpRequestMessage(HttpMethod.Get, DUMMY_URL);
+            await typedClient.SendAsync(request1, DUMMY_1, default);
+
+            var request2 = new HttpRequestMessage(HttpMethod.Get, DUMMY_URL);
+            await typedClient.SendAsync(request2, DUMMY_2, default);
+
+            var cache = _host.Services.GetService<ICookieContainerCache>();
+            var container1 = await cache.GetOrAdd(typeof(TestAltTypedClient).Name, DUMMY_1, default);
+            var container2 = await cache.GetOrAdd(typeof(TestAltTypedClient).Name, DUMMY_2, default);
+
+            Assert.Equal(container1.GetCookieHeader(new Uri(DUMMY_URL)), handlerReference.CookieSet[0]);
+            Assert.Equal(container2.GetCookieHeader(new Uri(DUMMY_URL)), handlerReference.CookieSet[1]);
+        }
+
+        [Fact]
+        public async Task Confirm_Cache_Copies_Distinct_Per_Request()
+        {
+            var handlerReference = _host.Services.GetService<TestingEvaluationData>();
+            handlerReference.Reset();
+
+            var typedClient = _host.Services.GetService<TestTypedClient>();
+            var cache = _host.Services.GetService<ICookieContainerCache>();
+
+            
+            var request1 = new HttpRequestMessage(HttpMethod.Get, DUMMY_URL);
+            await typedClient.SendAsync(request1, DUMMY_1, default);
+            var container1 = await cache.GetOrAdd(typeof(TestTypedClient).Name, DUMMY_1, default);
+
+            var request2 = new HttpRequestMessage(HttpMethod.Get, DUMMY_URL);
+            await typedClient.SendAsync(request2, DUMMY_1, default);
+            var container2 = await cache.GetOrAdd(typeof(TestTypedClient).Name, DUMMY_1, default);
+
+            // container 1 and 2 should be copies, not the same instance
+            Assert.NotEqual(container1.GetCookieHeader(new Uri(DUMMY_URL)), container2.GetCookieHeader(new Uri(DUMMY_URL)));
         }
 
         [Fact]

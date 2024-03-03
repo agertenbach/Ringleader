@@ -29,18 +29,6 @@ namespace Ringleader.HttpClientFactory
         }
 
         public HttpClient CreateClient(string name, string handlerContext)
-            => _httpClientFactory.CreateClient(_resolver.CreateContextName(name, handlerContext));
-
-        public TClient CreateClient<TClient, TContext>(TContext handlerContext, Func<TContext, string>? handlerContextResolver = null)
-            => CreateClient<TClient>(
-                handlerContextResolver is null 
-                    ? (handlerContext?.ToString() ?? string.Empty) 
-                    : handlerContextResolver.Invoke(handlerContext));
-
-        public HttpClient CreateClient<TContext>(string name, TContext handlerContext, Func<TContext, string>? handlerContextResolver = null)
-            => CreateClient(name,
-                handlerContextResolver is null
-                    ? (handlerContext?.ToString() ?? string.Empty)
-                    : handlerContextResolver.Invoke(handlerContext));
+            => _httpClientFactory.CreateClient(_resolver.CreateContextName(name, handlerContext)); 
     }
 }

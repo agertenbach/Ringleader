@@ -10,8 +10,8 @@
     <PackageLicenseFile>LICENSE</PackageLicenseFile>
     <PackageProjectUrl>https://github.com/agertenbach/Ringleader</PackageProjectUrl>
     <RepositoryUrl>https://github.com/agertenbach/Ringleader</RepositoryUrl>
-    <PackageReleaseNotes>Initial release</PackageReleaseNotes>
     <Nullable>enable</Nullable>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
   </PropertyGroup>
 
   <ItemGroup>
@@ -23,6 +23,13 @@
     <None Include="..\LICENSE">
       <Pack>True</Pack>
       <PackagePath></PackagePath>
+    </None>
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="..\README.md">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
     </None>
   </ItemGroup>
 

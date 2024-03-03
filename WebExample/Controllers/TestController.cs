@@ -21,14 +21,16 @@ namespace WebExample.Controllers
         [HttpGet]
         public async Task<ActionResult> Get(CancellationToken token)
         {
+            // Typed client context example:
             // A context can be based on pretty much any property about a request that needs to be made.
             // A random int is a dynamic example.
             int handlerContextInt = Random.Shared.Next(0, 1);
 
             // A typed client is resolved from the factory, and we convert our context into a string however we choose.
-            // If we didn't supply the function, it would use ToString();
+            // If we didn't supply the function, it would use ToString(); In this case, we are showing how the context might determine a cert to contextually use.
             var typedClient = _contextClientFactory.CreateClient<ExampleTypedClient, int>(handlerContextInt, handlerContextResolver: x => x == 1 ? "cert1" : "no-cert");
 
+            // Cookie container context example:
             // Our typed client was independently registered with support for cookie container context
             // We introduced this in the implementation to be based on a user ID parameter
             Guid userId = Guid.NewGuid();

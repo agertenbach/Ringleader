@@ -22,7 +22,7 @@ namespace Ringleader.Cookies
             => typeof(TClient).Name;
 
         /// <summary>
-        /// Get or add a <see cref="CookieContainer"/> for a <typeparamref name="TClient"/> and a cookie context key
+        /// Get or add a copy of a <see cref="CookieContainer"/> for a <typeparamref name="TClient"/> and a cookie context key
         /// </summary>
         /// <typeparam name="TClient"></typeparam>
         /// <param name="cache"></param>
@@ -34,7 +34,7 @@ namespace Ringleader.Cookies
             => cache.GetOrAdd(ClientName<TClient>(), key, token);
 
         /// <summary>
-        /// Add or update a <see cref="CookieContainer"/> for a <typeparamref name="TClient"/> and a cookie context key
+        /// Add or update a copy of a <see cref="CookieContainer"/> for a <typeparamref name="TClient"/> and a cookie context key
         /// </summary>
         /// <typeparam name="TClient"></typeparam>
         /// <param name="cache"></param>
@@ -62,7 +62,7 @@ namespace Ringleader.Cookies
     public interface ICookieContainerCache
     {
         /// <summary>
-        /// Get or add a <see cref="CookieContainer"/> for a named <see cref="HttpClient"/> and a cookie context key
+        /// Get or add a copy of a <see cref="CookieContainer"/> for a named <see cref="HttpClient"/> and a cookie context key
         /// </summary>
         /// <param name="clientName"></param>
         /// <param name="key"></param>
@@ -71,7 +71,7 @@ namespace Ringleader.Cookies
         Task<CookieContainer> GetOrAdd(string clientName, string key, CancellationToken token = default);
 
         /// <summary>
-        /// Add or update a <see cref="CookieContainer"/> for a named <see cref="HttpClient"/> and a cookie context key
+        /// Add or update a copy of a <see cref="CookieContainer"/> for a named <see cref="HttpClient"/> and a cookie context key
         /// </summary>
         /// <param name="clientName"></param>
         /// <param name="key"></param>
