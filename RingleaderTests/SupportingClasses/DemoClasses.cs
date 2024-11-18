@@ -12,7 +12,12 @@ using System.Threading;
 
 namespace RingleaderTests.SupportingClasses
 {
-    public class TestTypedClient
+    public interface ITestTypedClient
+    {
+        Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, string cookieContext, CancellationToken cancellationToken);
+    }
+
+    public class TestTypedClient : ITestTypedClient
     {
         private readonly HttpClient _httpClient;
         private readonly ILogger<TestTypedClient> _logger;
@@ -26,6 +31,27 @@ namespace RingleaderTests.SupportingClasses
         public Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, string cookieContext, CancellationToken cancellationToken)
         {
             _logger.LogInformation("This request was sent with the example typed client using the cookie container for {context}", cookieContext);
+            request.SetCookieContext(cookieContext);
+            return _httpClient.SendAsync(request, cancellationToken);
+        }
+    }
+
+    public record DummyGeneric();
+
+    public class TestGenericClient<T>
+    {
+        private readonly HttpClient _httpClient;
+        private readonly ILogger<TestGenericClient<T>> _logger;
+
+        public TestGenericClient(HttpClient httpClient, ILogger<TestGenericClient<T>> logger)
+        {
+            _httpClient = httpClient ?? throw new ArgumentNullException(nameof(httpClient));
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        }
+
+        public Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, string cookieContext, CancellationToken cancellationToken)
+        {
+            _logger.LogInformation("This request was sent with the example generic typed client using the cookie container for {context}", cookieContext);
             request.SetCookieContext(cookieContext);
             return _httpClient.SendAsync(request, cancellationToken);
         }

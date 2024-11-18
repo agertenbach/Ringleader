@@ -1,7 +1,10 @@
 ﻿using System;
+using System.Linq;
 using System.Net.Http;
 
 using Ringleader.HttpClientFactory;
+using Ringleader.Shared;
+using RingleaderTests.SupportingClasses;
 
 namespace RingleaderTests
 {
@@ -16,19 +19,19 @@ namespace RingleaderTests
         {
             _testEvaluation = testEvaluation ?? throw new ArgumentNullException(nameof(testEvaluation));
         }
-        public HttpMessageHandler CreateHandler(string clientName, string handlerContext)
+        public HttpMessageHandler CreateHandler(TypedClientSignature client, string handlerContext)
         {
             SocketsHttpHandler socketsHttpHandler = new SocketsHttpHandler();
-            if (handlerContext == IntegrationTest.DUMMY_1 || handlerContext == IntegrationTest.DUMMY_2)
-            {
 
-                _testEvaluation.ContextSet = handlerContext; // Flag context set
-            }
-            else
-            {
-                _testEvaluation.ContextSet = string.Empty; // Flag no context set
-            }
+            _testEvaluation.ClientSignature = client;
+            _testEvaluation.ContextSet = handlerContext; // Flag context set
             
+            // Check that there is an expected signature match before setting context
+            if (_testEvaluation.ExpectedSignature.Any(x => x == client) && _testEvaluation.ExpectedContext.Any(x => x == handlerContext))
+            {
+                _testEvaluation.ContextsMatched = true;   
+            }
+
             return socketsHttpHandler;
         }
     }

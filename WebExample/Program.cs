@@ -24,7 +24,7 @@ builder.Services
 // Override behavior for handler generation when criteria are met
 builder.Services.AddContextualHttpClientFactory((client, context) =>
 {
-    if (client == typeof(ExampleTypedClient).Name)
+    if (client.IsTypedClient<ExampleTypedClient>())
     {
         var handler = new SocketsHttpHandler();
         if (context == "cert1")

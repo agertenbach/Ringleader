@@ -40,7 +40,7 @@ namespace Microsoft.Extensions.DependencyInjection
         /// <param name="services"></param>
         /// <param name="primaryHandlerResolver">Function for optionally resolving a custom primary <see cref="HttpMessageHandler"/> instance based on a client name and supplied handler context</param>
         /// <returns></returns>
-        public static IContextualHttpClientBuilder AddContextualHttpClientFactory(this IServiceCollection services, Func<string, string, HttpMessageHandler?> primaryHandlerResolver)
+        public static IContextualHttpClientBuilder AddContextualHttpClientFactory(this IServiceCollection services, Func<TypedClientSignature, string, HttpMessageHandler?> primaryHandlerResolver)
         {
             services.Configure<DefaultActionedPrimaryHandlerFactoryOptions>(o => o.HandlerFactory = primaryHandlerResolver);
             services.AddSingleton<IPrimaryHandlerFactory, DefaultActionedPrimaryHandlerFactory>();
@@ -89,6 +89,23 @@ namespace Microsoft.Extensions.DependencyInjection
             where TContextualClientFactory : class, IContextualHttpClientFactory
         {
             builder.Services.AddSingleton<IContextualHttpClientFactory, TContextualClientFactory>();
+            return builder;
+        }
+
+        /// <summary>
+        /// Register a typed client mapping between the <typeparamref name="TInterface"/> interface and <typeparamref name="TImplementation"/> implementation to enable contextual resolution
+        /// </summary>
+        /// <typeparam name="TInterface">Typed client interface</typeparam>
+        /// <typeparam name="TImplementation">Typed client implementation of <typeparamref name="TInterface"/></typeparam>
+        /// <param name="builder"></param>
+        /// <returns></returns>
+        public static IContextualHttpClientBuilder WithTypedClientImplementation<TInterface, TImplementation>(this IContextualHttpClientBuilder builder)
+            where TInterface : class
+            where TImplementation : class, TInterface
+        {
+            builder.Services
+                .AddOptions<ContextualClientFactoryOptions>()
+                .Configure(c => c.SetTypedClientImplementation<TInterface, TImplementation>());
             return builder;
         }
     }

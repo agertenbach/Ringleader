@@ -19,7 +19,7 @@ namespace System.Net.Http
         /// <typeparam name="TClient"></typeparam>
         /// <param name="handlerContext">A string-based context for primary handler resolution and partitioning</param>
         /// <returns></returns>
-        TClient CreateClient<TClient>(string handlerContext);
+        TClient CreateClient<TClient>(string handlerContext) where TClient : class;
 
         /// <summary>
         /// Create a named <see cref="HttpClient"/> for a specified string context

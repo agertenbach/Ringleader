@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Ringleader.Shared;
+using System;
 using System.Net.Http;
 
 namespace Ringleader.HttpClientFactory
@@ -11,6 +12,6 @@ namespace Ringleader.HttpClientFactory
         /// <param name="clientName"><see cref="HttpClient"/> name</param>
         /// <param name="handlerContext">Handler context for the <see cref="HttpClient"/></param>
         /// <returns>An <see cref="HttpMessageHandler"/> configured based on the context, or <see langword="null"/> to use the default handler</returns>
-        HttpMessageHandler? CreateHandler(string clientName, string handlerContext);
+        HttpMessageHandler? CreateHandler(TypedClientSignature clientName, string handlerContext);
     }
 }
