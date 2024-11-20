@@ -25,7 +25,7 @@ Under the hood, Ringleader uses a decorator and custom builder filter that takes
 
 Ringleader exposes an interface called `IContextualHttpClientFactory` that resembles `IHttpClientFactory` and allows resolving typed or named clients, but adds a second parameter for partitioning the primary handler by a specified context.
 
-In order to enable the supplied context to provision a handler, a second interface `IPrimaryHandlerFactory` is used that accepts the client name and context to return an `HttpMessageHandler` with the appropriate configuration.
+In order to enable the supplied context to provision a handler, a second interface `IPrimaryHandlerFactory` is used that accepts the client name and context to optionally return a customized `HttpMessageHandler` with the appropriate configuration.
 
 ```csharp
 public interface IContextualHttpClientFactory
@@ -37,7 +37,7 @@ public interface IContextualHttpClientFactory
 public interface IPrimaryHandlerFactory
 {
     // TypedClientSignature is a convenience wrapper implicitly convertable to and from a string
-    HttpMessageHandler CreateHandler(TypedClientSignature clientName, string handlerContext);
+    HttpMessageHandler? CreateHandler(TypedClientSignature clientName, string handlerContext);
 }
 ```
 
