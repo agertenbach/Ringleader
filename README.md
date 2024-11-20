@@ -1,3 +1,4 @@
+
 # Ringleader
 Ringleader includes extensions, handler builder filters, and interfaces that extend the `DefaultHttpClientFactory` implementation to make customizing primary handler and cookie behavior for typed/named HTTP clients easier without losing the pooling and handler pipeline benefits of `IHttpClientFactory`
 
@@ -29,17 +30,20 @@ In order to enable the supplied context to provision a handler, a second interfa
 ```csharp
 public interface IContextualHttpClientFactory
 {
-    TClient CreateClient<TClient>(string handlerContext);
+    TClient CreateClient<TClient>(string handlerContext)  where TClient : class;
     HttpClient CreateClient(string clientName, string handlerContext);
 }
 
 public interface IPrimaryHandlerFactory
 {
-    HttpMessageHandler CreateHandler(string clientName, string handlerContext);
+    // TypedClientSignature is a convenience wrapper implicitly convertable to and from a string
+    HttpMessageHandler CreateHandler(TypedClientSignature clientName, string handlerContext);
 }
 ```
 
-In order to register the Ringleader HttpClientFactory interfaces, use the extensions during startup in addition to your normal use of `AddHttpClient()` to set up named or typed clients. You may register the primary handler factory as a singleton implementation, or alternatively supply a function instead that optionally returns a customized handler.
+In order to register the Ringleader HttpClientFactory interfaces, use the extensions during startup in addition to your normal use of `AddHttpClient()` to set up named or typed clients. You may register the primary handler factory as a singleton implementation for more advanced logic that requires additional dependency injection, or alternatively supply a function that optionally returns a customized handler directly at registration.
+
+> **New in 3.x**: A convenience type called `TypedClientSignature` wraps the `client` parameter to enable consistent conversions and comparisons with the string format used by `DefaultHttpClientFactory`. This type supports implicit conversion to and from a normal string, but allows explicit matching with `client.IsTypedClient<T>()`
 
 ```csharp
 using System.Net.Http;
@@ -50,12 +54,13 @@ builder.Services.AddHttpClient<ExampleTypedClient>();
 
 builder.Services.AddContextualHttpClientFactory((client, context) =>
 {
-    if (client == typeof(ExampleTypedClient).Name)
+	// This replaces 2.x: if (typeof(ExampleTypedClient).Name == client) 
+    if (client.IsTypedClient<ExampleTypedClient>())
     {
         var handler = new SocketsHttpHandler();
         if (context == "certificate-one")
         {
-            // your customizations here
+            // Your handler customization here
             handler.SslOptions = new System.Net.Security.SslClientAuthenticationOptions()
             {
                 ClientCertificates = new X509Certificate2Collection()
@@ -63,10 +68,29 @@ builder.Services.AddContextualHttpClientFactory((client, context) =>
         }
         return handler;
     }
-
+	// The default implementation will be used if you return null
     return null;
 });
 //...
+```
+
+#### New in 3.x: Typed clients with interfaces
+Previously, Ringleader was not able to correctly resolve contextual typed clients that were registered and resolved against an interface. Due to the way that `DefaultHttpClientFactory` resolves interface-registered typed client resolution from the service provider, interface-registered typed clients are now supported by Ringleader but require an explicit addition during services registration.
+
+```csharp
+using System.Net.Http;
+
+// Program.cs services registration ...
+
+builder.Services.AddHttpClient<IExampleTypedClient, ExampleTypedClient>();
+
+builder.Services.AddContextualHttpClientFactory<MyPrimaryHandlerFactory>()
+	.WithTypedClientImplementation<IExampleTypedClient, ExampleTypedClient>();
+	
+//...
+
+// This now works
+var client = _clientFactory.CreateClient<IExampleTypedClient>(context);
 ```
 
 ### Using `IContextualHttpClientFactory` in your application
