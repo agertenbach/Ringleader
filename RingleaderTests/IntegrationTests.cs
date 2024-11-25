@@ -10,6 +10,7 @@ using Ringleader;
 using RingleaderTests.SupportingClasses;
 using Ringleader.Cookies;
 using System.Threading.Tasks;
+using Ringleader.Shared;
 
 namespace RingleaderTests
 {
@@ -37,44 +38,140 @@ namespace RingleaderTests
 
                     // Add our dummy HttpClient and attach a delegating handler that can log execution for testing
                     services.AddTransient<TerminalTestingDelegatingHandler>();
+
+                    // Typed client
                     services.AddHttpClient<TestTypedClient>()
                         .UseContextualCookies()
                         .AddHttpMessageHandler<TerminalTestingDelegatingHandler>();
 
+                    // Typed client by interface
+                    services.AddHttpClient<ITestTypedClient, TestTypedClient>()
+                        .UseContextualCookies()
+                        .AddHttpMessageHandler<TerminalTestingDelegatingHandler>();
+
+                    // Typed client with generic
+                    services.AddHttpClient<TestGenericClient<DummyGeneric>>()
+                        .UseContextualCookies()
+                        .AddHttpMessageHandler<TerminalTestingDelegatingHandler>();
+
                     // Add contextual factory support
-                    services.AddContextualHttpClientFactory<TestingPrimaryHandlerFactory>();
+                    services.AddContextualHttpClientFactory<TestingPrimaryHandlerFactory>()
+                        .WithTypedClientImplementation<ITestTypedClient, TestTypedClient>();
                  });
         }
 
         /// <summary>
-        /// When we request a MyHttpClient instance through our contextual factory, the underlying handler should show a certificate attached based on the context
+        /// Make sure that TypedClientSignature string matching works for simple types
+        /// </summary>
+        [Fact]
+        public void TypedClientSignature_Matches_Strings_For_Simple_Types()
+        {
+            var signature = TypedClientSignature.For<TestTypedClient>();
+            Assert.Equal(typeof(TestTypedClient).Name, signature);
+        }
+
+        /// <summary>
+        /// Make sure that TypedClientSignature matches equivalent
+        /// </summary>
+        [Fact]
+        public void TypedClientSignature_Matches_Equals()
+        {
+            var signature = TypedClientSignature.For<TestTypedClient>();
+            var signature2 = TypedClientSignature.For<TestTypedClient>();
+            Assert.Equal(signature2, signature);
+        }
+
+        /// <summary>
+        /// Make sure that TypedClientSignature matches equivalent
+        /// </summary>
+        [Fact]
+        public void TypedClientSignature_Mismatch_Equals()
+        {
+            var signature = TypedClientSignature.For<TestTypedClient>();
+            var signature2 = TypedClientSignature.For<TestAltTypedClient>();
+            Assert.NotEqual(signature2, signature);
+        }
+
+        /// <summary>
+        /// Make sure that TypedClientSignature string matching works for generic types
+        /// <see href="https://github.com/agertenbach/Ringleader/issues/4"/>
+        /// </summary>
+        [Fact]
+        public void TypedClientSignature_Matches_Strings_For_Generic_Types()
+        {
+            var signature = TypedClientSignature.For<TestGenericClient<DummyGeneric>>();
+            Assert.Equal("TestGenericClient<DummyGeneric>", signature);
+        }
+
+        /// <summary>
+        /// When we request a TestGenericClient instance through our contextual factory for a client with a generic type, the factory resolves the client correctly
+        /// </summary>
+        [Fact]
+        public void Contextual_Request_Works_For_Generic_Typed_Clent()
+        {
+            var handlerReference = _host.Services.GetService<TestingEvaluationData>();
+            handlerReference.Reset();
+            handlerReference.ExpectedContext.Add(DUMMY_1);
+            handlerReference.ExpectedSignature.Add(TypedClientSignature.For<TestGenericClient<DummyGeneric>>());
+
+            var factory = _host.Services.GetService<IContextualHttpClientFactory>();
+            var typedClient = factory.CreateClient<TestGenericClient<DummyGeneric>>(DUMMY_1);
+            typedClient.SendAsync(new HttpRequestMessage(HttpMethod.Get, DUMMY_URL), string.Empty, default);
+
+            Assert.True(handlerReference.ContextsMatched);
+        }
+
+        /// <summary>
+        /// When we request a ITestTypedClient instance through our contextual factory for a client with an interface type, the factory resolves the client correctly
+        /// </summary>
+        [Fact]
+        public void Contextual_Request_Works_For_Interface_Typed_Clent()
+        {
+            var handlerReference = _host.Services.GetService<TestingEvaluationData>();
+            handlerReference.Reset();
+            handlerReference.ExpectedContext.Add(DUMMY_1);
+            handlerReference.ExpectedSignature.Add(TypedClientSignature.For<ITestTypedClient>());
+
+            var factory = _host.Services.GetService<IContextualHttpClientFactory>();
+            var typedClient = factory.CreateClient<ITestTypedClient>(DUMMY_1);
+            typedClient.SendAsync(new HttpRequestMessage(HttpMethod.Get, DUMMY_URL), string.Empty, default);
+
+            Assert.True(handlerReference.ContextsMatched);
+        }
+
+        /// <summary>
+        /// When we request a TestTypedClient instance through our contextual factory, the underlying handler should show a certificate attached based on the context
         /// </summary>
         [Fact]
         public void Contextual_Request_Returns_Custom_Handler()
         {
             var handlerReference = _host.Services.GetService<TestingEvaluationData>();
             handlerReference.Reset();
+            handlerReference.ExpectedContext.Add(DUMMY_1);
+            handlerReference.ExpectedSignature.Add(TypedClientSignature.For<TestTypedClient>());
 
             var factory = _host.Services.GetService<IContextualHttpClientFactory>();
             var typedClient = factory.CreateClient<TestTypedClient>(DUMMY_1);
             typedClient.SendAsync(new HttpRequestMessage(HttpMethod.Get, DUMMY_URL), string.Empty, default);
 
-            Assert.Equal(DUMMY_1, handlerReference.ContextSet); // Context should be applied to the handler
+            Assert.True(handlerReference.ContextsMatched);
         }
 
-       /// <summary>
-       /// When we request a MyHttpClient using the service container directly via DefaultHttpClientFactory, the underlying handler should show no context
-       /// </summary>
+        /// <summary>
+        /// When we request a TestTypedClient using the service container directly via DefaultHttpClientFactory, the underlying handler should show no context
+        /// </summary>
         [Fact]
         public void Regular_Request_Returns_Standard_Handler()
         {
             var handlerReference = _host.Services.GetService<TestingEvaluationData>();
             handlerReference.Reset();
+            handlerReference.ExpectedContext.Add(string.Empty);
+            handlerReference.ExpectedSignature.Add(TypedClientSignature.For<TestTypedClient>());
 
             var typedClient = _host.Services.GetService<TestTypedClient>();
             typedClient.SendAsync(new HttpRequestMessage(HttpMethod.Get, DUMMY_URL), string.Empty, default);
 
-            Assert.Equal(string.Empty, handlerReference.ContextSet); // No context should be applied to the handler
+            Assert.True(handlerReference.ContextsMatched);
         }
 
         /// <summary>
@@ -96,6 +193,7 @@ namespace RingleaderTests
             typedClientRegular.SendAsync(new HttpRequestMessage(HttpMethod.Get, DUMMY_URL), string.Empty, default);
             string regularSet = handlerReference.ContextSet;
 
+            Assert.Equal(TypedClientSignature.For<TestTypedClient>(), handlerReference.ClientSignature);
             Assert.True(regularSet == string.Empty && contextualSet == DUMMY_1); // Contextual call handlers should not interfere with subsequent regular call handlers
         }
 
@@ -118,6 +216,7 @@ namespace RingleaderTests
             typedClientContextual.SendAsync(new HttpRequestMessage(HttpMethod.Get, DUMMY_URL), string.Empty, default);
             string contextualSet = handlerReference.ContextSet;
 
+            Assert.Equal(TypedClientSignature.For<TestTypedClient>(), handlerReference.ClientSignature);
             Assert.True(regularSet == string.Empty && contextualSet == DUMMY_1); // Regular call handlers should not interfere with subsequent contextual call handlers
         }
 
@@ -140,6 +239,7 @@ namespace RingleaderTests
             secondClientContextual.SendAsync(new HttpRequestMessage(HttpMethod.Get, DUMMY_URL), string.Empty, default);
             string secondSet = handlerReference.ContextSet;
 
+            Assert.Equal(TypedClientSignature.For<TestTypedClient>(), handlerReference.ClientSignature);
             Assert.True(firstSet == DUMMY_1 && secondSet == DUMMY_2); // Each contextual request created and used a different handler for the pool
         }
 
@@ -156,6 +256,7 @@ namespace RingleaderTests
             var typedClient = factory.CreateClient<TestTypedClient>(DUMMY_1);
             typedClient.SendAsync(new HttpRequestMessage(HttpMethod.Get, DUMMY_URL), string.Empty, default);
 
+            Assert.Equal(TypedClientSignature.For<TestTypedClient>(), handlerReference.ClientSignature);
             Assert.True(handlerReference.DelegatingHandlerDidRun);
         }
 
@@ -171,6 +272,7 @@ namespace RingleaderTests
             var typedClientRegular = _host.Services.GetService<TestTypedClient>();
             typedClientRegular.SendAsync(new HttpRequestMessage(HttpMethod.Get, DUMMY_URL), string.Empty, default);
 
+            Assert.Equal(TypedClientSignature.For<TestTypedClient>(), handlerReference.ClientSignature);
             Assert.True(handlerReference.DelegatingHandlerDidRun);
         }
 
@@ -192,6 +294,7 @@ namespace RingleaderTests
             var typedClientRegular = _host.Services.GetService<TestTypedClient>();
             typedClientRegular.SendAsync(new HttpRequestMessage(HttpMethod.Get, DUMMY_URL), string.Empty, default);
 
+            Assert.Equal(TypedClientSignature.For<TestTypedClient>(), handlerReference.ClientSignature);
             Assert.True(handlerReference.DelegatingHandlerDidRun);
         }
 
@@ -215,6 +318,7 @@ namespace RingleaderTests
             var cookies1 = await cache.GetOrAdd<TestTypedClient>(DUMMY_1, default);
             var cookies2 = await cache.GetOrAdd<TestTypedClient>(DUMMY_2, default);
 
+            Assert.Equal(TypedClientSignature.For<TestTypedClient>(), handlerReference.ClientSignature);
             Assert.True(regularSet == string.Empty && contextualSet == DUMMY_1); // Contextual call handlers should not interfere with subsequent regular call handlers
             Assert.Equal(1, cookies1.Count);
             Assert.Equal(1, cookies2.Count);

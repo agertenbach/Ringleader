@@ -6,7 +6,9 @@
     <Description>Extends the .NET DefaultHttpClientFactory to support contextually appropriate primary handlers (i.e. unique certificates for different endpoints) and per-request cookie scope while retaining the benefits of handler pooling and typed client pipelines.</Description>
     <Copyright>2020-2024 Adam Gertenbach</Copyright>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <Version>2.0.1</Version>
+    <Version>3.0.0</Version>
+	<PackageVersion>3.0.0</PackageVersion>
+	<IncludeContentInPack>true</IncludeContentInPack>
     <PackageLicenseFile>LICENSE</PackageLicenseFile>
     <PackageProjectUrl>https://github.com/agertenbach/Ringleader</PackageProjectUrl>
     <RepositoryUrl>https://github.com/agertenbach/Ringleader</RepositoryUrl>
@@ -15,23 +17,14 @@
     <PackageTags>HttpClientFactory;IHttpClientFactory;HttpClient;DefaultHttpClientFactory;Cookies;Certificates;MessageHandler;PrimaryHandler;</PackageTags>
   </PropertyGroup>
 
+<ItemGroup>
+	<None Include="$(SolutionDir)LICENSE" Pack="true" PackagePath="" />
+	<None Include="$(SolutionDir)README.md" Pack="true" PackagePath="" />
+</ItemGroup>
+
   <ItemGroup>
     <PackageReference Include="Microsoft.Extensions.Http" Version="6.0.0" />
     <PackageReference Include="Microsoft.Extensions.Logging" Version="6.0.0" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <None Include="..\LICENSE">
-      <Pack>True</Pack>
-      <PackagePath></PackagePath>
-    </None>
-  </ItemGroup>
-
-  <ItemGroup>
-    <None Include="..\README.md">
-      <Pack>True</Pack>
-      <PackagePath>\</PackagePath>
-    </None>
   </ItemGroup>
 
 </Project>

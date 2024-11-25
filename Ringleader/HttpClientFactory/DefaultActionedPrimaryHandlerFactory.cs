@@ -1,4 +1,5 @@
 ﻿using Microsoft.Extensions.Options;
+using Ringleader.Shared;
 using System;
 using System.Collections.Generic;
 using System.Net.Http;
@@ -11,7 +12,7 @@ namespace Ringleader.HttpClientFactory
         /// <summary>
         /// Function to optionally resolve an <see cref="HttpMessageHandler"/> based on a specified client and/or context
         /// </summary>
-        public Func<string, string, HttpMessageHandler?> HandlerFactory { get; set; } 
+        public Func<TypedClientSignature, string, HttpMessageHandler?> HandlerFactory { get; set; } 
             = (client, context) => null;
     }
 
@@ -27,7 +28,7 @@ namespace Ringleader.HttpClientFactory
             _options = options ?? throw new ArgumentNullException(nameof(options));
         }
 
-        public HttpMessageHandler? CreateHandler(string clientName, string handlerContext)
+        public HttpMessageHandler? CreateHandler(TypedClientSignature clientName, string handlerContext)
             => _options.CurrentValue.HandlerFactory.Invoke(clientName, handlerContext);
     }
 }

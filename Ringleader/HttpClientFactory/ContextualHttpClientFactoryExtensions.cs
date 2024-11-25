@@ -10,7 +10,7 @@
         /// <param name="handlerContext">A string-based context for primary handler resolution and partitioning</param>
         /// <param name="handlerContextResolver">A resolver function for identifying a string-based context - if not specified, ToString() will be called</param>
         /// <returns></returns>
-        public static TClient CreateClient<TClient, TContext>(this IContextualHttpClientFactory factory, TContext handlerContext, Func<TContext, string>? handlerContextResolver = null)
+        public static TClient CreateClient<TClient, TContext>(this IContextualHttpClientFactory factory, TContext handlerContext, Func<TContext, string>? handlerContextResolver = null) where TClient : class
             => factory.CreateClient<TClient>(
                 handlerContextResolver is null
                     ? (handlerContext?.ToString() ?? string.Empty)
