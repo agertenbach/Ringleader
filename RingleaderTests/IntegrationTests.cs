@@ -71,6 +71,28 @@ namespace RingleaderTests
         }
 
         /// <summary>
+        /// Make sure that TypedClientSignature matches equivalent
+        /// </summary>
+        [Fact]
+        public void TypedClientSignature_Matches_Equals()
+        {
+            var signature = TypedClientSignature.For<TestTypedClient>();
+            var signature2 = TypedClientSignature.For<TestTypedClient>();
+            Assert.Equal(signature2, signature);
+        }
+
+        /// <summary>
+        /// Make sure that TypedClientSignature matches equivalent
+        /// </summary>
+        [Fact]
+        public void TypedClientSignature_Mismatch_Equals()
+        {
+            var signature = TypedClientSignature.For<TestTypedClient>();
+            var signature2 = TypedClientSignature.For<TestAltTypedClient>();
+            Assert.NotEqual(signature2, signature);
+        }
+
+        /// <summary>
         /// Make sure that TypedClientSignature string matching works for generic types
         /// <see href="https://github.com/agertenbach/Ringleader/issues/4"/>
         /// </summary>
